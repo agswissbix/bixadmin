@@ -1,0 +1,79 @@
+# Bytecode Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+env/
+ENV/
+.venv/
+.ENV/
+
+# Editor / IDE
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Django-specific
+*.log
+*.pot
+*.pyc
+*.sqlite3
+db.sqlite3
+media/
+staticfiles/
+static_root/
+local_settings.py
+
+# Pip
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Migrations (opzionale: mantieni se vuoi versionarle)
+**/migrations/__pycache__/
+**/migrations/*.pyc
+**/migrations/*.pyo
+# **/migrations/  ← scommenta se NON vuoi versionare i file di migrazione
+
+# Coverage / Testing
+htmlcov/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pytest
+.pytest_cache/
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# VS Code settings
+.vscode/
+
+# dotenv
+.env
+.env.*
+
+# Gunicorn
+gunicorn.pid
+
+# Docker
+*.pid
+*.bak
+*.swp
