@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "bixadmin",
     "bixscheduler",
+    'django_q',
     "bixmonitoring",
     "bixsettings",
     ]
@@ -139,3 +140,15 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Cluster per Django-q (scheduler)
+
+Q_CLUSTER = {
+    'name': 'DjangoQ',
+    'workers': 4,
+    'retry': 120,
+    'timeout': 90,
+    'queue_limit': 50,
+    'bulk': 10,
+    'orm': 'default',
+}

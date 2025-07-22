@@ -1,9 +1,109 @@
-from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
+from datetime import datetime, timedelta
+from django.shortcuts import render, get_object_or_404, redirect
+from django.utils import timezone
+from django.urls import reverse
+from django_q.models import Schedule
+from django_q.tasks import async_task
+from bixscheduler.utils import get_available_tasks
 
-
+FUNC_PATH = 'bixscheduler.tasks.'
 # Create your views here.
 # require admin role
 @login_required(login_url='/login/')
 def index(request):
-    return render(request, 'index.html')
+    return render(request, 'lista_schedule.html')
+
+def toggle_scheduler(request, schedule_id):
+    schedule = get_object_or_404(Schedule, id=schedule_id)
+    if schedule.next_run is None:
+        now = timezone.now()
+        next_minute = (now + timedelta(minutes=1)).replace(second=0, microsecond=0)
+        schedule.next_run = next_minute
+    else:
+        schedule.next_run = None
+    schedule.save()
+    return redirect(lista_schedule)
+
+
+def run_scheduler_now(request, schedule_id):
+    if request.method == 'POST':
+        schedule = get_object_or_404(Schedule, id=schedule_id)
+        if schedule.func:
+            try:
+                async_task(schedule.func)
+            except Exception as e:
+                print(f"Errore eseguendo {schedule.func}: {e}")
+    return redirect(reverse(lista_schedule))
+
+
+def delete_scheduler(request, schedule_id):
+    if request.method == 'POST':
+        schedule = get_object_or_404(Schedule, id=schedule_id)
+        schedule.delete()
+    return redirect('lista_schedule')
+
+
+def lista_schedule(request):
+    if request.method == 'POST':
+        schedule_id = request.POST.get('id')
+        schedule = get_object_or_404(Schedule, id=schedule_id)
+
+        schedule.name = request.POST.get('name')
+        schedule.func = request.POST.get('func')
+        schedule.schedule_type = request.POST.get('schedule_type')
+
+        minutes = request.POST.get('minutes')
+        schedule.minutes = int(minutes) if minutes else None
+
+        # Verifica se checkbox "infinite" è attivo
+        infinite_checked = request.POST.get('infinite') == 'on'
+        if infinite_checked:
+            schedule.repeats = -1
+        else:
+            repeats = request.POST.get('repeats')
+            schedule.repeats = int(repeats) if repeats not in [None, '', 'None'] else 1
+
+        next_run_str = request.POST.get('next_run')
+        if next_run_str:
+            try:
+                # tempo inserito dall'utente
+                user_time = timezone.make_aware(datetime.strptime(next_run_str, "%Y-%m-%dT%H:%M"))
+                # salvo 2 ore indietro
+                schedule.next_run = user_time - timedelta(hours=2)
+            except Exception as e:
+                print("Errore nel parsing di next_run:", e)
+
+        schedule.save()
+        return redirect('lista_schedule')
+
+    schedules = Schedule.objects.all().order_by('id')
+
+    for s in schedules:
+        if s.next_run:
+            s.display_next_run = s.next_run + timedelta(hours=2)
+        else:
+            s.display_next_run = None
+
+    available_tasks = get_available_tasks()
+    return render(request, 'lista_schedule.html', {
+        'schedules': schedules,
+        'available_tasks': available_tasks
+    })
+
+
+
+def aggiungi_scheduler(request):
+    if request.method == 'POST':
+        now = timezone.now()
+        next_run_default = (now + timedelta(minutes=1)).replace(second=0, microsecond=0)
+
+        Schedule.objects.create(
+            name='Nuovo Scheduler',
+            func='bixscheduler.tasks.aggiorna_cache',
+            schedule_type='O',
+            minutes=None,
+            next_run=next_run_default,
+            repeats=1,
+        )
+    return redirect('lista_schedule')

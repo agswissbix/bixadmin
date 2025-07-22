@@ -26,7 +26,13 @@ urlpatterns = [
     path('admin/', custom_admin_site.urls),
     path('login/', custom_admin_site.login, name='admin_login'),
     path('logout/', custom_admin_site.logout, name='admin_logout'),
-    path('scheduler/', scheduler_views.index, name='scheduler_index'),
+
+    path('scheduler/', scheduler_views.lista_schedule, name='lista_schedule'),
+    path('scheduler/aggiungi/', scheduler_views.aggiungi_scheduler, name='aggiungi_scheduler'),
+    path('scheduler/delete/<int:schedule_id>/', scheduler_views.delete_scheduler, name='delete_scheduler'),
+    path('scheduler/run/<int:schedule_id>/', scheduler_views.run_scheduler_now, name='run_scheduler_now'),
+    path('scheduler/toggle/<int:schedule_id>/', scheduler_views.toggle_scheduler, name='toggle_scheduler'),
+
     path('settings/', settings_views.index, name='settings_index'),
 ]
 
