@@ -56,7 +56,6 @@ def lista_schedule(request):
         minutes = request.POST.get('minutes')
         schedule.minutes = int(minutes) if minutes else None
 
-        # Verifica se checkbox "infinite" è attivo
         infinite_checked = request.POST.get('infinite') == 'on'
         if infinite_checked:
             schedule.repeats = -1
@@ -67,9 +66,7 @@ def lista_schedule(request):
         next_run_str = request.POST.get('next_run')
         if next_run_str:
             try:
-                # tempo inserito dall'utente
                 user_time = timezone.make_aware(datetime.strptime(next_run_str, "%Y-%m-%dT%H:%M"))
-                # salvo 2 ore indietro
                 schedule.next_run = user_time - timedelta(hours=2)
             except Exception as e:
                 print("Errore nel parsing di next_run:", e)
@@ -78,12 +75,19 @@ def lista_schedule(request):
         return redirect('lista_schedule')
 
     schedules = Schedule.objects.all().order_by('id')
+    now = timezone.now()
 
     for s in schedules:
-        if s.next_run:
-            s.display_next_run = s.next_run + timedelta(hours=2)
-        else:
+        # Deactivate if next_run is before or equal to now
+        if s.next_run and s.next_run <= now:
+            s.next_run = None
+            s.save(update_fields=['next_run'])
             s.display_next_run = None
+        else:
+            if s.next_run:
+                s.display_next_run = s.next_run + timedelta(hours=2)
+            else:
+                s.display_next_run = None
 
     available_tasks = get_available_tasks()
     return render(request, 'lista_schedule.html', {
