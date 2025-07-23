@@ -24,14 +24,14 @@
   }
 </style>
 <br>
-  <div class="mb-3 d-flex justify-content-center">
-    <form method="post" action="{% url 'aggiungi_scheduler' %}" class="d-inline">
-      {% csrf_token %}
-      <button type="submit" class="btn" style="background-color:#074048; color:white; font-weight:600;">
-        Aggiungi Scheduler
-      </button>
-    </form>
-  </div>
+<div class="mb-3 d-flex justify-content-center">
+  <form method="post" action="{% url 'aggiungi_scheduler' %}" class="d-inline">
+    {% csrf_token %}
+    <button type="submit" class="btn" style="background-color:#074048; color:white; font-weight:600;">
+      Aggiungi Scheduler
+    </button>
+  </form>
+</div>
 
 <div class="container-fluid scheduler-container bg-white shadow rounded">
   <div class="table-responsive">
@@ -58,30 +58,31 @@
               <input type="text" name="name" value="{{ s.name }}" required class="form-control form-control-sm mx-auto" style="max-width:150px;">
           </td>
           <td class="text-center">
-              <select name="func" required class="form-select form-select-sm mx-auto" style="max-width: 150px;">
-                {% for value, label in available_tasks %}
-                  <option value="{{ value }}" {% if s.func == value %}selected{% endif %}>{{ label }}</option>
-                {% endfor %}
-              </select>
+            <select name="func" required class="form-select form-select-sm mx-auto" style="max-width: 150px;">
+              {% for value, label in available_tasks %}
+                <option value="{{ value }}" {% if s.func == value %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
           </td>
           <td class="text-center">
-              <select name="schedule_type" class="form-select form-select-sm schedule_type mx-auto" required onchange="toggleFields(this)" style="max-width: 120px;">
-                <option value="O" {% if s.schedule_type == 'O' %}selected{% endif %}>Once</option>
-                <option value="I" {% if s.schedule_type == 'I' %}selected{% endif %}>Minutes</option>
-                <option value="H" {% if s.schedule_type == 'H' %}selected{% endif %}>Hourly</option>
-                <option value="D" {% if s.schedule_type == 'D' %}selected{% endif %}>Daily</option>
-                <option value="W" {% if s.schedule_type == 'W' %}selected{% endif %}>Weekly</option>
-                <option value="M" {% if s.schedule_type == 'M' %}selected{% endif %}>Monthly</option>
-              </select>
+            <select name="schedule_type" class="form-select form-select-sm schedule_type mx-auto" required style="max-width: 120px;">
+              <option value="O" {% if s.schedule_type == 'O' %}selected{% endif %}>Once</option>
+              <option value="I" {% if s.schedule_type == 'I' %}selected{% endif %}>Minutes</option>
+              <option value="H" {% if s.schedule_type == 'H' %}selected{% endif %}>Hourly</option>
+              <option value="D" {% if s.schedule_type == 'D' %}selected{% endif %}>Daily</option>
+              <option value="W" {% if s.schedule_type == 'W' %}selected{% endif %}>Weekly</option>
+              <option value="M" {% if s.schedule_type == 'M' %}selected{% endif %}>Monthly</option>
+            </select>
           </td>
           <td class="text-center">
-              <input type="number" name="minutes" min="1" value="{{ s.minutes|default_if_none:'' }}" class="form-control form-control-sm minutes_field mx-auto" style="max-width:70px;">
+            <input type="number" name="minutes" min="1" value="{{ s.minutes|default_if_none:'1' }}" class="form-control form-control-sm minutes_field mx-auto" style="max-width:70px;">
           </td>
           <td class="text-center">
-              <input type="datetime-local" name="next_run" value="{% if s.display_next_run %}{{ s.display_next_run|date:'Y-m-d\\TH:i' }}{% endif %}" class="form-control form-control-sm next_run_field mx-auto" style="max-width:180px;">
+            <input type="datetime-local" name="next_run" value="{% if s.display_next_run %}{{ s.display_next_run|date:'Y-m-d\\TH:i' }}{% endif %}" class="form-control form-control-sm next_run_field mx-auto" style="max-width:180px;">
           </td>
           <td class="text-center">
-            <div class="d-flex flex-column align-items-center justify-content-center gap-1 repeats_container">
+            <div class="d-flex flex-column align-items-center justify-content-center gap-1 repeats_container"
+                 style="{% if s.schedule_type == 'O' %}display:none;{% endif %}">
               <div class="form-check">
                 <input 
                   type="checkbox" 
@@ -97,7 +98,7 @@
                 value="{% if s.repeats is not None and s.repeats >= 0 %}{{ s.repeats }}{% else %}1{% endif %}" 
                 class="form-control form-control-sm repeats_field mx-auto" 
                 style="max-width:70px;"
-                min="1">
+                min="0">
             </div>
           </td>
 
@@ -110,7 +111,7 @@
           </td>
 
           <td class="align-middle text-center">
-              <button type="submit" class="btn btn-outline-secondary">Salva</button>
+            <button type="submit" class="btn btn-outline-secondary">Salva</button>
             </form>
           </td>
           <td class="align-middle text-center">
@@ -149,19 +150,29 @@ function toggleFields(selectElem) {
   const nextRunInput = row.querySelector('.next_run_field');
   const repeatsContainer = row.querySelector('.repeats_container');
 
+  // Nascondi tutto di default
   minutesInput.style.display = 'none';
   nextRunInput.style.display = 'none';
-  repeatsContainer.style.display = 'none';
+  repeatsContainer.style.setProperty('display', 'none', 'important');
 
-  if (type === 'I') {
+  if (type === 'O') {
+    // Once: mostra solo next_run
+    nextRunInput.style.display = 'inline-block';
+  } else if (type === 'I') {
+    // Minutes: mostra minutes, next_run e container ripetizioni
     minutesInput.style.display = 'inline-block';
     nextRunInput.style.display = 'inline-block';
-    repeatsContainer.style.display = 'flex';
-  } else if (type === 'O') {
-    nextRunInput.style.display = 'inline-block';
+    repeatsContainer.style.setProperty('display', 'flex', 'important');
   } else {
+    // Altri tipi: mostra next_run e container ripetizioni
     nextRunInput.style.display = 'inline-block';
-    repeatsContainer.style.display = 'flex';
+    repeatsContainer.style.setProperty('display', 'flex', 'important');
+  }
+
+  // Se container visibile, aggiorna visibilità input number in base al checkbox
+  if (repeatsContainer.style.display !== 'none') {
+    const infiniteCheckbox = repeatsContainer.querySelector('.infinite_checkbox');
+    toggleRepeats(infiniteCheckbox);
   }
 }
 
@@ -173,8 +184,13 @@ function toggleRepeats(checkbox) {
 document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.schedule_type').forEach(select => {
     toggleFields(select);
+    select.addEventListener('change', () => toggleFields(select));
   });
-  document.querySelectorAll('.infinite_checkbox').forEach(cb => toggleRepeats(cb));
+
+  document.querySelectorAll('.infinite_checkbox').forEach(cb => {
+    cb.addEventListener('change', () => toggleRepeats(cb));
+    toggleRepeats(cb);
+  });
 });
 </script>
 
