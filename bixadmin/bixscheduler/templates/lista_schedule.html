@@ -36,21 +36,22 @@
 <div class="container-fluid scheduler-container bg-white shadow rounded">
   <div class="table-responsive">
     <table class="table table-bordered table-hover scheduler-table">
-      <thead class="bg-light">
-        <tr>
-          <th class="text-center">Nome</th>
-          <th class="text-center">Funzione</th>
-          <th class="text-center">Frequenza</th>
-          <th class="text-center">Minuti</th>
-          <th class="text-center">Prossima Esecuzione</th>
-          <th class="text-center">Ripetizioni</th>
-          <th class="text-center">Stato</th>
-          <th colspan="4" class="text-center">Funzioni</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for s in schedules %}
-        <tr>
+<thead class="bg-light">
+  <tr>
+    <th class="text-center">Nome</th>
+    <th class="text-center">Funzione</th>
+    <th class="text-center">Frequenza</th>
+    <th class="text-center">Minuti</th>
+    <th class="text-center">Prossima Esecuzione</th>
+    <th class="text-center">Ripetizioni</th>
+    <th class="text-center">Stato</th>
+    <th class="text-center">Output</th> <!-- nuova colonna -->
+    <th colspan="4" class="text-center">Funzioni</th>
+  </tr>
+</thead>
+<tbody>
+  {% for s in schedules %}
+  <tr>
           <td class="text-center">
             <form method="post" action="" class="d-inline">
               {% csrf_token %}
@@ -81,8 +82,8 @@
             <input type="datetime-local" name="next_run" value="{% if s.display_next_run %}{{ s.display_next_run|date:'Y-m-d\\TH:i' }}{% endif %}" class="form-control form-control-sm next_run_field mx-auto" style="max-width:180px;">
           </td>
           <td class="text-center">
-            <div class="d-flex flex-column align-items-center justify-content-center gap-1 repeats_container"
-                 style="{% if s.schedule_type == 'O' %}display:none;{% endif %}">
+            <div class="d-flex flex-column align-items-center justify-content-center gap-1 repeats_container">
+
               <div class="form-check">
                 <input 
                   type="checkbox" 
@@ -110,17 +111,21 @@
             {% endif %}
           </td>
 
+              <td class="text-center align-middle">
+          <input type="text" name="output" value="{{ s.output|default_if_none:'' }}" 
+                class="form-control form-control-sm mx-auto" style="max-width:150px;">
+        </td>
+        <td class="align-middle text-center">
+          <button type="submit" class="btn btn-outline-secondary">Salva</button>
+        </td>
+        </form>
           <td class="align-middle text-center">
-            <button type="submit" class="btn btn-outline-secondary">Salva</button>
-            </form>
-          </td>
-          <td class="align-middle text-center">
-            <form method="post" action="{% url 'toggle_scheduler' s.id %}">
-              {% csrf_token %}
-              <button type="submit" class="btn {% if s.next_run %}btn-outline-danger{% else %}btn-outline-success{% endif %}">
-                {% if s.next_run %}Disattiva{% else %}Attiva{% endif %}
-              </button>
-            </form>
+        <form method="post" action="{% url 'toggle_scheduler' s.id %}">
+          {% csrf_token %}
+          <button type="submit" class="btn {% if s.next_run %}btn-outline-danger{% else %}btn-outline-success{% endif %}">
+            {% if s.next_run %}Disattiva{% else %}Attiva{% endif %}
+          </button>
+        </form>
           </td>
           <td class="align-middle text-center">
             <form method="post" action="{% url 'run_scheduler_now' s.id %}">
@@ -149,47 +154,60 @@ function toggleFields(selectElem) {
   const minutesInput = row.querySelector('.minutes_field');
   const nextRunInput = row.querySelector('.next_run_field');
   const repeatsContainer = row.querySelector('.repeats_container');
+  const infiniteCheckbox = repeatsContainer.querySelector('.infinite_checkbox');
+  const repeatsInput = repeatsContainer.querySelector('.repeats_field');
 
   // Nascondi tutto di default
-  minutesInput.style.display = 'none';
-  nextRunInput.style.display = 'none';
-  repeatsContainer.style.setProperty('display', 'none', 'important');
+  minutesInput.style.visibility = 'hidden';
+  nextRunInput.style.visibility = 'hidden';
+  repeatsContainer.style.visibility = 'hidden';
+  infiniteCheckbox.style.visibility = 'hidden';
+  repeatsInput.style.visibility = 'hidden';
+
+  repeatsContainer.style.display = 'flex'; // mantiene spazio e layout
 
   if (type === 'O') {
     // Once: mostra solo next_run
-    nextRunInput.style.display = 'inline-block';
+    nextRunInput.style.visibility = 'visible';
+    // non mostro repeatsContainer, quindi non chiamo toggleRepeats
   } else if (type === 'I') {
     // Minutes: mostra minutes, next_run e container ripetizioni
-    minutesInput.style.display = 'inline-block';
-    nextRunInput.style.display = 'inline-block';
-    repeatsContainer.style.setProperty('display', 'flex', 'important');
+    minutesInput.style.visibility = 'visible';
+    nextRunInput.style.visibility = 'visible';
+    repeatsContainer.style.visibility = 'visible';
+    infiniteCheckbox.style.visibility = 'visible';
+    toggleRepeats(infiniteCheckbox);
   } else {
     // Altri tipi: mostra next_run e container ripetizioni
-    nextRunInput.style.display = 'inline-block';
-    repeatsContainer.style.setProperty('display', 'flex', 'important');
-  }
-
-  // Se container visibile, aggiorna visibilità input number in base al checkbox
-  if (repeatsContainer.style.display !== 'none') {
-    const infiniteCheckbox = repeatsContainer.querySelector('.infinite_checkbox');
+    nextRunInput.style.visibility = 'visible';
+    repeatsContainer.style.visibility = 'visible';
+    infiniteCheckbox.style.visibility = 'visible';
     toggleRepeats(infiniteCheckbox);
   }
 }
 
 function toggleRepeats(checkbox) {
   const repeatsInput = checkbox.closest('.repeats_container').querySelector('.repeats_field');
-  repeatsInput.style.display = checkbox.checked ? 'none' : 'inline-block';
+  if (checkbox.checked) {
+    repeatsInput.style.visibility = 'hidden';
+  } else {
+    repeatsInput.style.visibility = 'visible';
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.schedule_type').forEach(select => {
-    toggleFields(select);
+    toggleFields(select);  // inizializza visibilità corretta
     select.addEventListener('change', () => toggleFields(select));
   });
 
   document.querySelectorAll('.infinite_checkbox').forEach(cb => {
     cb.addEventListener('change', () => toggleRepeats(cb));
-    toggleRepeats(cb);
+    // chiamalo solo se il repeatsContainer è visibile
+    const repeatsContainer = cb.closest('.repeats_container');
+    if (repeatsContainer.style.visibility !== 'hidden') {
+      toggleRepeats(cb);
+    }
   });
 });
 </script>

@@ -53,15 +53,26 @@ def lista_schedule(request):
         schedule.func = request.POST.get('func')
         schedule.schedule_type = request.POST.get('schedule_type')
 
-        minutes = request.POST.get('minutes')
-        schedule.minutes = int(minutes) if minutes else None
-
-        infinite_checked = request.POST.get('infinite') == 'on'
-        if infinite_checked:
-            schedule.repeats = -1
+        # Salva minutes SOLO se schedule_type è 'I', altrimenti None
+        if schedule.schedule_type == 'I':
+            minutes = request.POST.get('minutes')
+            schedule.minutes = int(minutes) if minutes else None
         else:
-            repeats = request.POST.get('repeats')
-            schedule.repeats = int(repeats) if repeats not in [None, '', 'None'] else 1
+            schedule.minutes = None
+
+        # Salva repeats solo se schedule_type NON è 'O', altrimenti None
+        if schedule.schedule_type != 'O':
+            infinite_checked = request.POST.get('infinite') == 'on'
+            if infinite_checked:
+                schedule.repeats = -1
+            else:
+                repeats = request.POST.get('repeats')
+                try:
+                    schedule.repeats = int(repeats)
+                except (TypeError, ValueError):
+                    schedule.repeats = 1
+        else:
+            schedule.repeats = 1
 
         next_run_str = request.POST.get('next_run')
         if next_run_str:
@@ -78,22 +89,30 @@ def lista_schedule(request):
     now = timezone.now()
 
     for s in schedules:
-        # Deactivate if next_run is before or equal to now
-        if s.next_run and s.next_run <= now:
-            s.next_run = None
-            s.save(update_fields=['next_run'])
-            s.display_next_run = None
-        else:
-            if s.next_run:
-                s.display_next_run = s.next_run + timedelta(hours=2)
+        if s.next_run:
+            if s.next_run <= now:
+                if s.repeats != 0:  # solo se repeats non è 0
+                    # aggiorna al prossimo minuto pieno
+                    next_minute = (now + timedelta(minutes=1)).replace(second=0, microsecond=0)
+                    s.next_run = next_minute
+                    s.save(update_fields=['next_run'])
+                    s.display_next_run = next_minute + timedelta(hours=2)
+                else:
+                    # repeats = 0 => disattiva
+                    s.next_run = None
+                    s.save(update_fields=['next_run'])
+                    s.display_next_run = None
             else:
-                s.display_next_run = None
+                s.display_next_run = s.next_run + timedelta(hours=2)
+        else:
+            s.display_next_run = None
 
     available_tasks = get_available_tasks()
     return render(request, 'lista_schedule.html', {
         'schedules': schedules,
         'available_tasks': available_tasks
     })
+
 
 
 
@@ -104,7 +123,7 @@ def aggiungi_scheduler(request):
 
         Schedule.objects.create(
             name='Nuovo Scheduler',
-            func='bixscheduler.tasks.aggiorna_cache',
+            func=f"{FUNC_PATH}aggiorna_cache",
             schedule_type='O',
             minutes=None,
             next_run=next_run_default,
