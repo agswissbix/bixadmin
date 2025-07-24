@@ -14,13 +14,4 @@ def aggiorna_cache():
 def stampa_messaggio():
     print(f"[{datetime.now()}] Ciao! Sono uno scheduler eseguito con Django-Q.")
 
-def fix_repeats_and_clear_failed_tasks():
-    # Correggi repeats minori di -1
-    schedules = Schedule.objects.filter(repeats__lt=-1)
-    for s in schedules:
-        s.repeats = -1
-        s.save()
 
-    # Elimina tutti i task falliti
-    failed_tasks = Task.objects.filter(success=False)
-    failed_tasks.delete()
