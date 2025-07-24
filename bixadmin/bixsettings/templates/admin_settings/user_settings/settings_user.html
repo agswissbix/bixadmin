@@ -1,3 +1,7 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block body %}
+
 <script>
     function newUser() {
         $.ajax({
@@ -112,3 +116,5 @@
         width: fit-content;
     }
 </style>
+
+{% endblock %}

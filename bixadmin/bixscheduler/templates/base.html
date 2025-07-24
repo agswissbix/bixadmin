@@ -39,7 +39,9 @@
     <!--Bootstrap-->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet"
           integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js" integrity="sha384-mQ93GR66B00ZXjt0YO5KlohRA5SY2XofN4zfuZxLkoj1gXtW8ANNCe9d5Y3eG5eD" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-w76A2z02tPqdjFq2h3t87Z0pniNXhU9zFfE2B2wYlT2zN0N7p6Lep1Hh5K8BVdYH"
+        crossorigin="anonymous"></script>
 
 
     <!-- Inclusione degli stili di Toast UI Editor -->
@@ -58,11 +60,6 @@
 
     <!--Chart.js-->
     <script src="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js"></script>
-
-    <!--Popper.js-->
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"
-            integrity="sha384-oBqDVmMz9ATKxIep9tiCxS/Z9fNfEXiDAYTujMAeBAsjFuCZSmKbSSUnQlmh/jp3"
-            crossorigin="anonymous"></script>
 
 
     <!--Icons-->
@@ -137,36 +134,46 @@
 <body style="height: 100%; overflow: hidden !important">
     
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark px-3">
-    <a class="navbar-brand" href="">BixAdmin</a>
-    <div class="collapse navbar-collapse">
-      <ul class="navbar-nav mb-2 mb-lg-0">
-        <li class="nav-item">
-          <a class="nav-link" href="/settings" id="settingsLink">Settings</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/scheduler" id="schedulerLink">Scheduler</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/monitoring" id="monitoringLink">Monitoring</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link align-end" href="/logout" id="monitoringLink">Logout</a>
-        </li>
-      </ul>
-    </div>
+  <a class="navbar-brand" href="#">BixAdmin</a>
+  <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent"
+          aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+
+  <div class="collapse navbar-collapse" id="navbarContent">
+    <ul class="navbar-nav mb-2 mb-lg-0">
+      <li class="nav-item">
+        <a class="nav-link" href="/settings/users" id="usersLink">Settings - Utenti</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="/settings/tables" id="tablesLink">Settings - Tabelle</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="/scheduler" id="schedulerLink">Scheduler</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="/monitoring" id="monitoringLink">Monitoring</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link align-end" href="/logout" id="logoutLink">Logout</a>
+      </li>
+    </ul>
+  </div>
 </nav>
 
-  <script>
-    // Evidenzia il link attivo in base all'URL
-    const currentPath = window.location.pathname;
 
-    if (currentPath.includes("settings")) {
-      document.getElementById("settingsLink").classList.add("active");
-    } else if (currentPath.includes("scheduler")) {
-      document.getElementById("schedulerLink").classList.add("active");
-    } else if (currentPath.includes("monitoring")) {
-      document.getElementById("monitoringLink").classList.add("active");
-    }
+  <script>
+const currentPath = window.location.pathname;
+
+  if (currentPath.includes("/settings/users")) {
+    document.getElementById("usersLink").classList.add("active");
+  } else if (currentPath.includes("/settings/tables")) {
+    document.getElementById("tablesLink").classList.add("active");
+  } else if (currentPath.includes("scheduler")) {
+    document.getElementById("schedulerLink").classList.add("active");
+  } else if (currentPath.includes("monitoring")) {
+    document.getElementById("monitoringLink").classList.add("active");
+  }
   </script>
 <!-- Begin page -->
  <div class="container-fluid h-100 p-2">
