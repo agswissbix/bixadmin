@@ -150,27 +150,28 @@ function toggleFields(selectElem) {
   const nextRunInput = row.querySelector('.next_run_field');
   const repeatsContainer = row.querySelector('.repeats_container');
 
-  // Nascondi tutto di default
-  minutesInput.style.display = 'none';
-  nextRunInput.style.display = 'none';
-  repeatsContainer.style.setProperty('display', 'none', 'important');
+  // Nascondi tutto di default con visibility hidden
+  minutesInput.style.visibility = 'hidden';
+  nextRunInput.style.visibility = 'hidden';
+  repeatsContainer.style.visibility = 'hidden';
+  repeatsContainer.style.display = 'flex'; // mantiene spazio e layout
 
   if (type === 'O') {
     // Once: mostra solo next_run
-    nextRunInput.style.display = 'inline-block';
+    nextRunInput.style.visibility = 'visible';
   } else if (type === 'I') {
     // Minutes: mostra minutes, next_run e container ripetizioni
-    minutesInput.style.display = 'inline-block';
-    nextRunInput.style.display = 'inline-block';
-    repeatsContainer.style.setProperty('display', 'flex', 'important');
+    minutesInput.style.visibility = 'visible';
+    nextRunInput.style.visibility = 'visible';
+    repeatsContainer.style.visibility = 'visible';
   } else {
     // Altri tipi: mostra next_run e container ripetizioni
-    nextRunInput.style.display = 'inline-block';
-    repeatsContainer.style.setProperty('display', 'flex', 'important');
+    nextRunInput.style.visibility = 'visible';
+    repeatsContainer.style.visibility = 'visible';
   }
 
   // Se container visibile, aggiorna visibilità input number in base al checkbox
-  if (repeatsContainer.style.display !== 'none') {
+  if (repeatsContainer.style.visibility !== 'hidden') {
     const infiniteCheckbox = repeatsContainer.querySelector('.infinite_checkbox');
     toggleRepeats(infiniteCheckbox);
   }
@@ -178,7 +179,11 @@ function toggleFields(selectElem) {
 
 function toggleRepeats(checkbox) {
   const repeatsInput = checkbox.closest('.repeats_container').querySelector('.repeats_field');
-  repeatsInput.style.display = checkbox.checked ? 'none' : 'inline-block';
+  if (checkbox.checked) {
+    repeatsInput.style.visibility = 'hidden';
+  } else {
+    repeatsInput.style.visibility = 'visible';
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
