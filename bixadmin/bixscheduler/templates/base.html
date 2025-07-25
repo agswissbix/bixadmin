@@ -99,7 +99,7 @@
     <!--<script src="{% static 'js/pages/demo.project-gantt.js' %}"></script>-->
 
     <!-- Dragula js - kanban-->
-    <script src="{% static 'vendor/dragula/dragula.min.js' %}"></script>
+    <script src="https://unpkg.com/dragula@3.7.3/dist/dragula.min.js"></script>
 
 
     <!--Zebra datepicker-->
@@ -143,10 +143,13 @@
   <div class="collapse navbar-collapse" id="navbarContent">
     <ul class="navbar-nav mb-2 mb-lg-0">
       <li class="nav-item">
-        <a class="nav-link" href="/settings/users" id="usersLink">Settings - Utenti</a>
+        <a class="nav-link" href="/settings/users" id="usersLink">Utenti</a>
       </li>
       <li class="nav-item">
-        <a class="nav-link" href="/settings/tables" id="tablesLink">Settings - Tabelle</a>
+        <a class="nav-link" href="/settings/tables" id="tablesLink">Tabelle</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="/settings/charts" id="chartsLink">Grafici</a>
       </li>
       <li class="nav-item">
         <a class="nav-link" href="/scheduler" id="schedulerLink">Scheduler</a>
@@ -169,6 +172,8 @@ const currentPath = window.location.pathname;
     document.getElementById("usersLink").classList.add("active");
   } else if (currentPath.includes("/settings/tables")) {
     document.getElementById("tablesLink").classList.add("active");
+  } else if (currentPath.includes("/settings/charts")) {
+    document.getElementById("chartsLink").classList.add("active");
   } else if (currentPath.includes("scheduler")) {
     document.getElementById("schedulerLink").classList.add("active");
   } else if (currentPath.includes("monitoring")) {

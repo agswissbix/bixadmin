@@ -941,3 +941,140 @@ def test_function(request):
 
 
     return JsonResponse(response, safe=False)
+
+def settings_charts(request):
+    context = {}
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT * FROM sys_dashboard ORDER BY name asc"
+        )
+        rows = dictfetchall(cursor)
+
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT * FROM v_users where is_active = 1"
+
+            )
+            users = dictfetchall(cursor)
+
+    context['dashboards'] = rows
+    context['users'] = users
+    return render(request, 'admin_settings/settings_charts.html', {'context': context})
+
+
+def new_dashboard(request):
+    dashboard_name = request.POST.get('dashboard-name')
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "INSERT INTO sys_dashboard (name,userid) VALUES (%s, %s)",
+            [dashboard_name, 1]
+        )
+    return JsonResponse({'success': True})
+
+
+def save_users_dashboards(request):
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "DELETE FROM sys_user_dashboard"
+        )
+
+    for key, value in request.POST.items():
+        if '-' in key:
+            dashboard_name, sys_user_id = key.split('-')
+            dashboard_id = value
+
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "INSERT INTO sys_user_dashboard (userid,dashboardid) VALUES (%s, %s)",
+                    [sys_user_id, dashboard_id]
+                )
+
+    return JsonResponse({'success': True})
+
+
+def new_chart_block(request):
+    if request.method == 'POST':
+        name = request.POST.get('block_name')
+        dashboard_id = request.POST.get('dashboard_id')
+        view_id = request.POST.get('view_id')
+        report_id = request.POST.get('report_id')
+
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO sys_dashboard_block (dashboardid, name, userid, viewid, reportid)
+                VALUES (%s, %s, %s, %s, %s)
+                """,
+                [dashboard_id, name, 1, view_id, report_id]
+            )
+
+    return redirect('index')
+
+def new_report(request):
+    tableid = request.POST.get('tableid')
+    report_name = request.POST.get('report_name')
+    fieldid = request.POST.get('fieldid')
+    operation = request.POST.get('operation')
+    layout = request.POST.get('layout')
+    groupby = request.POST.get('groupby')
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """
+            INSERT INTO sys_report (userid, tableid, name, fieldid, operation, layout, groupby)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """,
+            [1, tableid, report_name, fieldid, operation, layout, groupby]
+        )
+
+    return JsonResponse({'success': True})
+
+
+def new_view(request):
+    tableid = request.POST.get('tableid')
+    view_name = request.POST.get('view_name')
+    query_conditions = request.POST.get('query_conditions')
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """
+            INSERT INTO sys_view (userid, name, tableid, query_conditions)
+            VALUES (%s, %s, %s, %s)
+            """,
+            [1, view_name, tableid, query_conditions]
+        )
+
+    return JsonResponse({'success': True})
+
+
+def save_dashboard_table(request):
+    rows = request.POST.get('rows')
+    rows = json.loads(rows)
+
+    for row in rows:
+        names = []
+        values = []
+
+        for value in row['values']:
+            names.append(value['name'])
+            values.append(value['value'])
+            formatted_values = ["'{}'".format(value) for value in values]
+
+        if row['action'] == 'add':
+            query = "INSERT INTO sys_dashboard ({}) VALUES ({})".format(
+                ', '.join(names), ', '.join(formatted_values)
+            )
+            with connection.cursor() as cursor:
+                cursor.execute(query)
+
+        if row['action'] == 'delete':
+            query = "DELETE FROM sys_dashboard where id = '{}'".format(values[0])
+            with connection.cursor() as cursor:
+                cursor.execute(query)
+
+        if row['action'] == 'edit':
+            query = "REPLACE INTO sys_dashboard ({}) VALUES ({})".format(
+                ', '.join(names), ', '.join(formatted_values)
+            )
+            with connection.cursor() as cursor:
+                cursor.execute(query)
+
+    return JsonResponse({'success': True})
