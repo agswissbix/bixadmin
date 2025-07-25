@@ -3,6 +3,8 @@
 import os
 import sys
 
+# Aggiungo la cartella bixdata al PYTHONPATH
+sys.path.insert(0, r"C:\Users\stagista\Desktop\bixdata")
 
 def main():
     """Run administrative tasks."""
@@ -16,7 +18,6 @@ def main():
             "forget to activate a virtual environment?"
         ) from exc
     execute_from_command_line(sys.argv)
-
 
 if __name__ == "__main__":
     main()

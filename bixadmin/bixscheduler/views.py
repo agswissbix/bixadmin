@@ -6,7 +6,10 @@ from django.urls import reverse
 from django_q.models import Schedule
 from django_q.tasks import async_task
 from bixscheduler.utils import get_available_tasks
+import importlib
 
+
+HOOK_PATH = 'bixscheduler.hooks.on_task_success'
 FUNC_PATH = 'bixscheduler.tasks.'
 # Create your views here.
 # require admin role
@@ -31,9 +34,10 @@ def run_scheduler_now(request, schedule_id):
         schedule = get_object_or_404(Schedule, id=schedule_id)
         if schedule.func:
             try:
+                # Lancia la funzione tramite Django Q
                 async_task(schedule.func)
             except Exception as e:
-                print(f"Errore eseguendo {schedule.func}: {e}")
+                print(f"Errore lanciando {schedule.func} con async_task: {e}")
     return redirect(reverse(lista_schedule))
 
 
@@ -52,6 +56,9 @@ def lista_schedule(request):
         schedule.name = request.POST.get('name')
         schedule.func = request.POST.get('func')
         schedule.schedule_type = request.POST.get('schedule_type')
+
+        # Imposta l'hook dal valore della variabile
+        schedule.hook = HOOK_PATH
 
         # Salva minutes SOLO se schedule_type è 'I', altrimenti None
         if schedule.schedule_type == 'I':
@@ -124,6 +131,7 @@ def aggiungi_scheduler(request):
         Schedule.objects.create(
             name='Nuovo Scheduler',
             func=f"{FUNC_PATH}aggiorna_cache",
+            hook=HOOK_PATH,               # <-- imposta qui l'hook
             schedule_type='O',
             minutes=None,
             next_run=next_run_default,
