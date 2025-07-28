@@ -35,7 +35,7 @@ def run_scheduler_now(request, schedule_id):
         try:
             async_task(
                 schedule.func,
-                hook='bixscheduler.hooks.on_task_success',  # forziamo lo stesso hook
+                hook=HOOK_PATH,  # forziamo lo stesso hook
             )
         except Exception as e:
             print(f"Errore lanciando {schedule.func} con async_task: {e}")
