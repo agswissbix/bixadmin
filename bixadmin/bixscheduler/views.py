@@ -32,13 +32,14 @@ def toggle_scheduler(request, schedule_id):
 def run_scheduler_now(request, schedule_id):
     if request.method == 'POST':
         schedule = get_object_or_404(Schedule, id=schedule_id)
-        if schedule.func:
-            try:
-                # Lancia la funzione tramite Django Q
-                async_task(schedule.func)
-            except Exception as e:
-                print(f"Errore lanciando {schedule.func} con async_task: {e}")
-    return redirect(reverse(lista_schedule))
+        try:
+            async_task(
+                schedule.func,
+                hook='bixscheduler.hooks.on_task_success',  # forziamo lo stesso hook
+            )
+        except Exception as e:
+            print(f"Errore lanciando {schedule.func} con async_task: {e}")
+    return redirect('lista_schedule')
 
 
 def delete_scheduler(request, schedule_id):

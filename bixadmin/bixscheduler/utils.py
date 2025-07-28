@@ -15,7 +15,7 @@ def get_available_tasks():
             available.append((path, label))
 
     # Funzioni di tutti i bixengine.customapp_*.script
-    import bixengine
+    import bixengine # type: ignore
     for finder, module_name, ispkg in pkgutil.iter_modules(bixengine.__path__):
         if module_name.startswith("customapp_"):
             try:
