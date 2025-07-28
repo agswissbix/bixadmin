@@ -21,6 +21,7 @@ from django.urls import path, include
 from bixadmin.core.admin import custom_admin_site
 from bixscheduler import views as scheduler_views
 from bixsettings.views import settings_view as settings_views
+from bixmonitoring import views as monitoring_views
 
 urlpatterns = [
     path('admin/', custom_admin_site.urls),
@@ -43,6 +44,8 @@ urlpatterns = [
     path('new_report/', settings_views.new_report, name='new_report'),
     path('new_view/', settings_views.new_view, name='new_view'),
     path('save_dashboard_table/', settings_views.save_dashboard_table, name='save_dashboard_table'),
+
+    path('save_monitoring/', monitoring_views.save_monitoring, name='save_monitoring'),
 
     path('new_dashboard/', settings_views.new_dashboard, name='new_dashboard'),
     path('settings_table/', settings_views.settings_table, name='settings_table'),

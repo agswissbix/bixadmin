@@ -35,7 +35,7 @@ def run_scheduler_now(request, schedule_id):
         try:
             async_task(
                 schedule.func,
-                hook=HOOK_PATH,  # forziamo lo stesso hook
+                hook = schedule.hook or HOOK_PATH, 
             )
         except Exception as e:
             print(f"Errore lanciando {schedule.func} con async_task: {e}")
