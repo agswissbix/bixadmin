@@ -139,3 +139,6 @@ def aggiungi_scheduler(request):
             repeats=1,
         )
     return redirect('lista_schedule')
+
+def get_render_loading(request):
+    return render(request, 'loading.html')

@@ -124,7 +124,7 @@
 
 <div id="settings_block_user_tables" class="drag-elements-container" style="height: 95%; overflow: scroll">
     {% for index, value in workspaces.items %}
-         <div id="" data-workspace="{{ value.name }}" class="drag-item card card-body">
+         <div id="" data-workspace="{{ value.name }}" class="drag-item card card-body mb-3">
          <h5>{{ value.name }}</h5>
             {% for table in value.tables %}
                 <div data-order="{{ table.order }}" data-tableid="{{ table.id }}" class="drag-item2">

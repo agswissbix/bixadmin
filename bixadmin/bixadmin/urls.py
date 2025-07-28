@@ -26,6 +26,7 @@ urlpatterns = [
     path('admin/', custom_admin_site.urls),
     path('login/', custom_admin_site.login, name='admin_login'),
     path('logout/', custom_admin_site.logout, name='admin_logout'),
+    path('loading/', scheduler_views.get_render_loading, name='loading'),
 
     path('scheduler/', scheduler_views.lista_schedule, name='lista_schedule'),
     path('scheduler/aggiungi/', scheduler_views.aggiungi_scheduler, name='aggiungi_scheduler'),
@@ -35,8 +36,15 @@ urlpatterns = [
 
     path('settings/tables', settings_views.settings_table, name='settings_table'),
     path('settings/users', settings_views.settings_user, name='settings_users'),
+    
+    path('settings/charts', settings_views.settings_charts, name='settings_charts'),
+    path('save_users_dashboards/', settings_views.save_users_dashboards, name='save_users_dashboards'),
+    path('new_chart_block/', settings_views.new_chart_block, name='new_chart_block'),
+    path('new_report/', settings_views.new_report, name='new_report'),
+    path('new_view/', settings_views.new_view, name='new_view'),
+    path('save_dashboard_table/', settings_views.save_dashboard_table, name='save_dashboard_table'),
 
-
+    path('new_dashboard/', settings_views.new_dashboard, name='new_dashboard'),
     path('settings_table/', settings_views.settings_table, name='settings_table'),
     path('settings_table_usertables/', settings_views.settings_table_usertables, name='settings_table_usertables'),
     path('settings_table_usertables_save/', settings_views.settings_table_usertables_save, name='settings_table_usertables_save'),
@@ -47,7 +55,6 @@ urlpatterns = [
     path('settings_table_columnlinked/', settings_views.settings_table_columnlinked, name='settings_table_columnlinked'),
     path('settings_table_columnlinked_save/', settings_views.settings_table_columnlinked_save, name='settings_table_columnlinked_save'),
     path('settings_table_fields/', settings_views.settings_table_fields, name='settings_table_fields'),
-    path('settings_charts/', settings_views.settings_charts, name='settings_charts'),
     path('settings_table_fields_settings_save/', settings_views.settings_table_fields_settings_save, name='settings_table_fields_settings_save'),
     path('load_table_settings_menu/', settings_views.load_table_settings_menu, name='load_table_settings_menu'),
     path('settings_table_settings/', settings_views.settings_table_settings, name='settings_table_settings'),
