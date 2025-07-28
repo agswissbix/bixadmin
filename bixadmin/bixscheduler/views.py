@@ -8,14 +8,8 @@ from django_q.tasks import async_task
 from bixscheduler.utils import get_available_tasks
 import importlib
 
-
 HOOK_PATH = 'bixscheduler.hooks.on_task_success'
 FUNC_PATH = 'bixscheduler.tasks.'
-# Create your views here.
-# require admin role
-@login_required(login_url='/login/')
-def index(request):
-    return render(request, 'lista_schedule.html')
 
 def toggle_scheduler(request, schedule_id):
     schedule = get_object_or_404(Schedule, id=schedule_id)
@@ -26,7 +20,7 @@ def toggle_scheduler(request, schedule_id):
     else:
         schedule.next_run = None
     schedule.save()
-    return redirect(lista_schedule)
+    return redirect('lista_schedule')
 
 
 def run_scheduler_now(request, schedule_id):
@@ -48,7 +42,7 @@ def delete_scheduler(request, schedule_id):
         schedule.delete()
     return redirect('lista_schedule')
 
-
+#@login_required(login_url='/login/')
 def lista_schedule(request):
     if request.method == 'POST':
         schedule_id = request.POST.get('id')

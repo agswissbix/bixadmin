@@ -1,0 +1,175 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block body %}
+<div class="d-flex flex-row h-100 w-100">
+    <!-- Riquadro sinistro -->
+    <div class="bg-white rounded-end-3 shadow p-4" style="width: 25%;">
+        <h2 class="mb-4">Filtri Monitoring</h2>
+        <form id="filterForm">
+            <div class="mb-3">
+                <label class="form-label">Cliente ID</label>
+                <select id="cliente_id" class="form-select" onchange="sendFilters()">
+                    <option value="all">All</option>
+                    {% for c in cliente_ids %}
+                    <option value="{{ c }}">{{ c }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Tipo</label>
+                <select id="tipo" class="form-select" onchange="sendFilters()">
+                    <option value="all">All</option>
+                    {% for t in tipi %}
+                    <option value="{{ t }}">{{ t }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Parametro</label>
+                <select id="parametro" class="form-select" onchange="sendFilters()">
+                    <option value="all">All</option>
+                    {% for p in parametri %}
+                    <option value="{{ p }}">{{ p }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </form>
+    </div>
+
+    <!-- Riquadro destro -->
+    <div class="flex-fill bg-white rounded-start-3 shadow p-4 ms-3" id="results">
+        <h2 class="mb-4">Risultati</h2>
+        <p class="text-muted">Nessun contenuto disponibile.</p>
+    </div>
+</div>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+function sendFilters() {
+    const clienteId = document.getElementById('cliente_id').value;
+    const tipo = document.getElementById('tipo').value;
+    const parametro = document.getElementById('parametro').value;
+
+    const params = new URLSearchParams({
+        cliente_id: clienteId,
+        tipo: tipo,
+        parametro: parametro,
+    });
+
+    fetch('/monitoring/?' + params.toString(), {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+    console.log('Dati ricevuti:', data);
+
+    const resultsDiv = document.getElementById('results');
+    resultsDiv.innerHTML = '<h2 class="mb-4">Risultati</h2>';
+
+    const tipo = data.tipo ? data.tipo.toLowerCase() : '';
+
+    if (tipo === 'services' && data.parametri && data.parametri.length > 0) {
+        // --- gestione services ---
+        data.parametri.forEach(item => {
+            const status = item.valore ? item.valore.toLowerCase() : '';
+            const statusColor = status === 'running' ? 'green' : (status === 'disabled' ? 'red' : 'gray');
+
+            const div = document.createElement('div');
+            div.className = 'd-flex justify-content-between align-items-center border p-2 mb-2 rounded';
+            div.innerHTML = `
+                <span>${item.nome}</span>
+                <span style="width: 15px; height: 15px; background-color: ${statusColor}; border-radius: 50%; display: inline-block;"></span>
+            `;
+            resultsDiv.appendChild(div);
+        });
+    } else if (['folders', 'counters'].includes(tipo) && data.parametri && data.parametri.length > 0) {
+        // --- gestione folders/counters: grafico dinamico ---
+        const canvas = document.createElement('canvas');
+        canvas.id = 'myChart';
+        canvas.style.maxWidth = '600px';
+        canvas.style.maxHeight = '400px';
+        resultsDiv.appendChild(canvas);
+
+        const dateTimeSet = new Set();
+        data.parametri.forEach(item => {
+            const dtStr = `${item.data} ${item.ora}`;
+            dateTimeSet.add(dtStr);
+        });
+        const labels = Array.from(dateTimeSet).sort();
+
+        const nomiSet = new Set(data.parametri.map(item => item.nome));
+        const nomi = Array.from(nomiSet);
+
+        const colors = [
+            'rgba(75, 192, 192, 1)', 
+            'rgba(255, 99, 132, 1)',
+            'rgba(54, 162, 235, 1)',
+            'rgba(255, 206, 86, 1)',
+            'rgba(153, 102, 255, 1)',
+            'rgba(255, 159, 64, 1)'
+        ];
+
+        const datasets = nomi.map((nome, i) => {
+            const valoriMap = {};
+            data.parametri.forEach(item => {
+                if(item.nome === nome) {
+                    const dtStr = `${item.data} ${item.ora}`;
+                    valoriMap[dtStr] = Number(item.valore);
+                }
+            });
+            const dataArr = labels.map(dt => valoriMap.hasOwnProperty(dt) ? valoriMap[dt] : null);
+
+            return {
+                label: nome,
+                data: dataArr,
+                borderColor: colors[i % colors.length],
+                backgroundColor: colors[i % colors.length].replace('1)', '0.2)'),
+                fill: true,
+                tension: 0.3,
+            };
+        });
+
+        const ctx = document.getElementById('myChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'top' },
+                    title: {
+                        display: true,
+                        text: 'Valori dinamici per folders/counters'
+                    }
+                },
+                scales: {
+                    y: { beginAtZero: true },
+                    x: {
+                        ticks: {
+                            maxRotation: 90,
+                            minRotation: 45
+                        }
+                    }
+                }
+            }
+        });
+
+    } else {
+        resultsDiv.innerHTML += '<p class="text-muted">Nessun contenuto disponibile.</p>';
+    }
+})
+    .catch(error => {
+        console.error('Errore:', error);
+    });
+}
+</script>
+{% endblock %}

@@ -35,6 +35,8 @@ urlpatterns = [
     path('scheduler/run/<int:schedule_id>/', scheduler_views.run_scheduler_now, name='run_scheduler_now'),
     path('scheduler/toggle/<int:schedule_id>/', scheduler_views.toggle_scheduler, name='toggle_scheduler'),
 
+    path('monitoring/', monitoring_views.lista_monitoring, name='lista_monitoring'),
+
     path('settings/tables', settings_views.settings_table, name='settings_table'),
     path('settings/users', settings_views.settings_user, name='settings_users'),
     
@@ -44,8 +46,6 @@ urlpatterns = [
     path('new_report/', settings_views.new_report, name='new_report'),
     path('new_view/', settings_views.new_view, name='new_view'),
     path('save_dashboard_table/', settings_views.save_dashboard_table, name='save_dashboard_table'),
-
-    path('save_monitoring/', monitoring_views.save_monitoring, name='save_monitoring'),
 
     path('new_dashboard/', settings_views.new_dashboard, name='new_dashboard'),
     path('settings_table/', settings_views.settings_table, name='settings_table'),
