@@ -5,13 +5,6 @@ from datetime import datetime
 from django.db import connection
 from django.shortcuts import redirect, render
 
-# Crea un alias del modulo "commonapp" verso "bixengine.commonapp"
-if 'commonapp' not in sys.modules:
-    sys.modules['commonapp'] = importlib.import_module('bixengine.commonapp')
-
-# Ora l'import di UserRecord funziona
-from bixengine.commonapp.bixmodels.user_record import UserRecord #type: ignore
-
 
 
 def lista_monitoring(request):
@@ -76,37 +69,45 @@ def get_output(func, output, run_at, cliente_id):
     salva_user_monitoring(status, run_at, func, output_type, values, cliente_id)
 
 def salva_user_monitoring(status, run_at, func, output_type, values, cliente_id):
-    for parametro, valore in values.items():
-        record = UserRecord('monitoring')
-        record.values['recordstatus_'] = status
-        record.values['data'] = run_at.date().isoformat()
-        record.values['ora'] = run_at.strftime("%H:%M:%S")
-        record.values['funzione'] = func
-        record.values['tipo'] = output_type
-        record.values['client_id'] = cliente_id
-        record.values['parametro'] = parametro
+    data = run_at.date().isoformat()
+    ora = run_at.strftime("%H:%M:%S")
 
-        # Salvataggio dinamico in base al tipo
-        if output_type in ['counters', 'folders']:
-            record.values['valore_num'] = valore
-            # Assicuriamoci di non salvare nelle altre colonne
-            record.values.pop('valore_data', None)
-            record.values.pop('valore_stringa', None)
-        elif output_type == 'dates':
-            record.values['valore_data'] = valore
-            record.values.pop('valore_num', None)
-            record.values.pop('valore_stringa', None)
-        elif output_type == 'services':
-            record.values['valore_stringa'] = valore
-            record.values.pop('valore_num', None)
-            record.values.pop('valore_data', None)
+    with connection.cursor() as cursor:
+        # Calcola il prossimo recordid_
+        cursor.execute("SELECT MAX(recordid_) FROM user_monitoring")
+        result = cursor.fetchone()
+        max_recordid = result[0]
+
+        if max_recordid is None:
+            next_recordid = '00000000000000000000000000000001'
         else:
-            # Default: salviamo come stringa
-            record.values['valore_stringa'] = str(valore)
-            record.values.pop('valore_num', None)
-            record.values.pop('valore_data', None)
+            next_recordid = str(int(max_recordid) + 1).zfill(32)
 
-        record.save()
+        for parametro, valore in values.items():
+            valore_num = None
+            valore_data = None
+            valore_stringa = None
+
+            if output_type in ['counters', 'folders']:
+                valore_num = valore
+            elif output_type == 'dates':
+                valore_data = valore
+            elif output_type == 'services':
+                valore_stringa = valore
+            else:
+                valore_stringa = str(valore)
+
+            cursor.execute("""
+                INSERT INTO user_monitoring
+                (recordid_, recordstatus_, data, ora, funzione, tipo, client_id, parametro, valore_num, valore_data, valore_stringa)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
+            """, [
+                next_recordid, status, data, ora, func, output_type, cliente_id, parametro,
+                valore_num, valore_data, valore_stringa
+            ])
+
+            # Incrementa next_recordid per il prossimo inserimento
+            next_recordid = str(int(next_recordid) + 1).zfill(32)
 
 def salva_sys_monitoring(run_at, func, output_type, output, cliente_id):
     data = run_at.date().isoformat()  

@@ -40,10 +40,6 @@ from .beta import *
 from .helper_view import *
 import csv
 from functools import wraps
-from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.triggers.interval import IntervalTrigger
-from apscheduler.jobstores.memory import MemoryJobStore
-from apscheduler.executors.pool import ThreadPoolExecutor
 from .businesslogic.bixdata_logic import *
 from .businesslogic.settings_business_logic import *
 from .businesslogic.models.record import *
