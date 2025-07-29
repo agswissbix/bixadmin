@@ -13,12 +13,28 @@ class CustomAdminSite(AdminSite):
     site_title = "BixAdmin Portal"
     index_title = "Benvenuto in BixAdmin"
 
-    def index(self, request, extra_context=None):
+    def login(self, request, extra_context=None):
         """
-        Redirect dalla pagina principale dell'admin a /scheduler/
+        Gestisce il login e redirect a /settings/tables dopo il login
         """
         if request.user.is_authenticated:
             return redirect('/settings/tables')
+        
+        # Se è una richiesta POST (tentativo di login)
+        if request.method == 'POST':
+            response = super().login(request, extra_context=extra_context)
+            # Se il login è andato a buon fine e c'è un redirect
+            if hasattr(response, 'status_code') and response.status_code == 302:
+                return redirect('/settings/tables')
+            return response
+        
+        # Per richieste GET, mostra la pagina di login normale
+        return super().login(request, extra_context=extra_context)
+
+    def index(self, request, extra_context=None):
+        """
+        Mostra la pagina index normale dell'admin
+        """
         return super().index(request, extra_context=extra_context)
     
     def logout(self, request, extra_context=None):

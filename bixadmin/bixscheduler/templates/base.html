@@ -160,6 +160,9 @@
       <li class="nav-item">
         <a class="nav-link align-end" href="/logout" id="logoutLink">Logout</a>
       </li>
+      <li class="nav-item">
+        <a class="nav-link align-end" href="/admin" id="adminLink">Admin</a>
+      </li>
     </ul>
   </div>
 </nav>
@@ -178,6 +181,8 @@ const currentPath = window.location.pathname;
     document.getElementById("schedulerLink").classList.add("active");
   } else if (currentPath.includes("monitoring")) {
     document.getElementById("monitoringLink").classList.add("active");
+  } else if (currentPath.includes("admin")) {
+    document.getElementById("adminLink").classList.add("active");
   }
   </script>
 <!-- Begin page -->
