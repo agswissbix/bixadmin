@@ -3,9 +3,9 @@
 import os
 import sys
 
-
-
-sys.path.insert(0,  os.environ.get('BIXENGINE_PATH'))
+databasename=os.environ.get('DATABASE_NAME')
+bixenginepath=os.environ.get('BIXENGINE_PATH')
+sys.path.insert(0, bixenginepath)
 
 def main():
     """Run administrative tasks."""
