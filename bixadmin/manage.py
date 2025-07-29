@@ -3,9 +3,11 @@
 import os
 import sys
 
-databasename=os.environ.get('DATABASE_NAME')
-bixenginepath=os.environ.get('BIXENGINE_PATH')
-sys.path.insert(0, bixenginepath)
+bixengine_path = os.environ.get('BIXENGINE_PATH')
+if bixengine_path and bixengine_path not in sys.path:
+    sys.path.insert(0, bixengine_path)
+else:
+    print("ATTENZIONE: BIXENGINE_PATH non impostato o non valido")
 
 def main():
     """Run administrative tasks."""
