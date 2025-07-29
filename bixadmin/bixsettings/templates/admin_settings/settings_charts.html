@@ -4,7 +4,7 @@
 
 <div style="overflow:scroll; height: 100%">
 
-    <div class="container text-center card card-body" style="margin-top: 2%; float: left">
+    <div class="container text-center card card-body" style="margin: auto">
         <h3>Nuova dashboard</h3>
         {% csrf_token %}
         <div class="container text-center card card-body" style="margin-top: 2%">
@@ -25,7 +25,8 @@
             <form method="post" action="{% url 'save_users_dashboards' %}" class="container text-center" style="float: left">
                 {% for user in context.users %}
                     <h4>{{ user.username }}</h4>
-                    {% for user_dashboard in user.dashboards %}
+                    {% for user_dashboard in context.dashboards %}
+                    
                         {% if user_dashboard.visible == True %}
                             {{ user_dashboard.name }}
                             <input type="checkbox" name="{{ user_dashboard.name }}-{{ user.sys_user_id }}" value="{{ user_dashboard.id }}" checked>
@@ -221,7 +222,7 @@
 
 
 
-<div class="container text-center card card-body" style="margin-top: 2%">
+<div class="container text-center card card-body" style="margin-top: 2%; margin-bottom: 5%">
 
     <ul class="nav nav-pills nav-fill">
       <li class="nav-item">
