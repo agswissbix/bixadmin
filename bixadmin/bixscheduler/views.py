@@ -22,7 +22,6 @@ def toggle_scheduler(request, schedule_id):
     schedule.save()
     return redirect('lista_schedule')
 
-
 def run_scheduler_now(request, schedule_id):
     if request.method == 'POST':
         schedule = get_object_or_404(Schedule, id=schedule_id)
@@ -34,7 +33,6 @@ def run_scheduler_now(request, schedule_id):
         except Exception as e:
             print(f"Errore lanciando {schedule.func} con async_task: {e}")
     return redirect('lista_schedule')
-
 
 def delete_scheduler(request, schedule_id):
     if request.method == 'POST':
@@ -91,23 +89,7 @@ def lista_schedule(request):
     now = timezone.now()
 
     for s in schedules:
-        if s.next_run:
-            if s.next_run <= now:
-                if s.repeats != 0:  # solo se repeats non è 0
-                    # aggiorna al prossimo minuto pieno
-                    next_minute = (now + timedelta(minutes=1)).replace(second=0, microsecond=0)
-                    s.next_run = next_minute
-                    s.save(update_fields=['next_run'])
-                    s.display_next_run = next_minute + timedelta(hours=2)
-                else:
-                    # repeats = 0 => disattiva
-                    s.next_run = None
-                    s.save(update_fields=['next_run'])
-                    s.display_next_run = None
-            else:
-                s.display_next_run = s.next_run + timedelta(hours=2)
-        else:
-            s.display_next_run = None
+        restart_schedule(s)
 
     available_tasks = get_available_tasks()
     return render(request, 'lista_schedule.html', {
@@ -115,8 +97,57 @@ def lista_schedule(request):
         'available_tasks': available_tasks
     })
 
+def restart_schedule(schedule):
+    now, ref, stype = timezone.now(), schedule.next_run, schedule.schedule_type
 
+    if not ref:  # mai pianificato
+        schedule.display_next_run = None
+        return
+    if ref > now:  # futuro valido
+        schedule.display_next_run = ref + timedelta(hours=2)
+        return
+    if schedule.repeats == 0:  # finito, disattiva
+        schedule.next_run = None
+        schedule.save(update_fields=['next_run'])
+        schedule.display_next_run = None
+        return
 
+    # Calcola nuovo next_run in base al tipo
+    if stype == 'H':  # hourly, mantiene i minuti
+        next_run = now.replace(minute=ref.minute, second=0, microsecond=0)
+        if next_run <= now: next_run += timedelta(hours=1)
+
+    elif stype == 'D':  # daily, mantiene ora e minuti
+        next_run = now.replace(hour=ref.hour, minute=ref.minute, second=0, microsecond=0)
+        if next_run <= now: next_run += timedelta(days=1)
+
+    elif stype == 'W':  # weekly, mantiene giorno settimana + ora/minuto
+        days = (ref.weekday() - now.weekday()) % 7
+        next_run = now.replace(hour=ref.hour, minute=ref.minute, second=0, microsecond=0) + timedelta(days=days)
+        if next_run <= now: next_run += timedelta(days=7)
+
+    elif stype == 'M':  # monthly, mantiene giorno mese + ora/minuto
+        from calendar import monthrange
+        y, m, d = now.year, now.month, ref.day
+        try:
+            next_run = now.replace(day=d, hour=ref.hour, minute=ref.minute, second=0, microsecond=0)
+        except ValueError:  # giorno non esiste
+            next_run = now.replace(day=monthrange(y, m)[1], hour=ref.hour, minute=ref.minute, second=0, microsecond=0)
+        if next_run <= now:  # passa al mese prossimo
+            m, y = (m + 1, y + 1) if m == 12 else (m + 1, y)
+            next_run = next_run.replace(year=y, month=m, day=min(d, monthrange(y, m)[1]))
+
+    elif stype == 'I':  # interval, mantiene fase iniziale
+        interval = schedule.minutes or 1
+        passed = int((now - ref).total_seconds() // (interval * 60)) + 1
+        next_run = ref + timedelta(minutes=interval * passed)
+
+    else:  # fallback: prossimo minuto
+        next_run = (now + timedelta(minutes=1)).replace(second=0, microsecond=0)
+
+    schedule.next_run = next_run
+    schedule.save(update_fields=['next_run'])
+    schedule.display_next_run = next_run + timedelta(hours=2)
 
 def aggiungi_scheduler(request):
     if request.method == 'POST':

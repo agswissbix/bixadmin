@@ -2,6 +2,7 @@
 {% load static %}
 
 {% block body %}
+
 <div class="d-flex flex-row h-100 w-100">
     <!-- Riquadro sinistro -->
     <div class="bg-white rounded-end-3 shadow p-4" style="width: 25%;">
@@ -123,8 +124,9 @@
                     div.className = 'd-flex justify-content-between align-items-center border p-2 mb-2 rounded';
                     div.innerHTML = `
                         <span>${item.nome}</span>
-                        <span style="width: 15px; height: 15px; background-color: ${statusColor}; border-radius: 50%; display: inline-block;"></span>
-                    `;
+<span style="display:inline-block; width: 16px; height: 16px; border: 2px solid ${statusColor}; border-radius: 50%; position: relative;">
+  <span style="display: block; width: 8px; height: 8px; background-color: ${statusColor}; border-radius: 50%; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);"></span>
+</span>`;
                     resultsDiv.appendChild(div);
                 });
 
@@ -134,8 +136,8 @@
                 // Canvas per line chart
                 const lineCanvas = document.createElement('canvas');
                 lineCanvas.id = 'lineChart';
-                lineCanvas.style.maxWidth = '600px';
-                lineCanvas.style.maxHeight = '400px';
+                lineCanvas.style.maxWidth = '1000px';
+                lineCanvas.style.maxHeight = '500px';
                 resultsDiv.appendChild(lineCanvas);
 
                 // Calcolo labels e datasets per il line chart
@@ -191,15 +193,16 @@
                             legend: { position: 'top' },
                             title: {
                                 display: true,
-                                text: 'Valori dinamici per folders/counters'
+                                text: 'Andamento dei valori'
                             }
                         },
+                        // rotazione data/ora
                         scales: {
                             y: { beginAtZero: true },
                             x: {
                                 ticks: {
                                     maxRotation: 90,
-                                    minRotation: 45
+                                    minRotation: 90
                                 }
                             }
                         }
@@ -209,8 +212,8 @@
                 // Canvas per pie chart
                 const pieCanvas = document.createElement('canvas');
                 pieCanvas.id = 'pieChart';
-                pieCanvas.style.maxWidth = '400px';
-                pieCanvas.style.maxHeight = '400px';
+                pieCanvas.style.maxWidth = '500px';
+                pieCanvas.style.maxHeight = '500px';
                 pieCanvas.classList.add('mt-4');
                 resultsDiv.appendChild(pieCanvas);
 
@@ -246,10 +249,20 @@
                     options: {
                         responsive: true,
                         plugins: {
-                            legend: { position: 'right' },
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    padding: 20 // aumenta lo spazio tra il chart e la legenda
+                                }
+                            },
                             title: {
                                 display: true,
-                                text: 'Distribuzione valori più recenti (totale 100%)'
+                                text: 'Grafico degli ultimi valori registrati'
+                            }
+                        },
+                        layout: {
+                            padding: {
+                                bottom: 20 // spinge tutto verso l'alto, aumentando lo spazio sotto
                             }
                         }
                     }

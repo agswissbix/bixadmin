@@ -105,9 +105,13 @@
 
           <td class="text-center align-middle">
             {% if s.next_run %}
-              <span style="color: #074048;">✔️</span>
+              <span style="display:inline-block; width: 16px; height: 16px; border: 2px solid green; border-radius: 50%; position: relative;">
+                <span style="display: block; width: 8px; height: 8px; background-color: green; border-radius: 50%; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);"></span>
+              </span>
             {% else %}
-              <span class="text-danger">❌</span>
+              <span style="display:inline-block; width: 16px; height: 16px; border: 2px solid red; border-radius: 50%; position: relative;">
+                <span style="display: block; width: 8px; height: 8px; background-color: red; border-radius: 50%; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);"></span>
+              </span>
             {% endif %}
           </td>
 
