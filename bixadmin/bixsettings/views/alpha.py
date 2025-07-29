@@ -47,13 +47,7 @@ from functools import wraps
 from .businesslogic.models.table import *
 from .businesslogic.models.database_helper import *
 
-from docx import Document
-from docx.shared import Inches, Pt, RGBColor
-from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
-from docx.oxml import OxmlElement
-from docx.enum.section import WD_SECTION
-from docx.enum.style import WD_STYLE_TYPE
-from docxcompose.composer import Composer
+
 from .helpers.helperdb import *
 
 import qrcode
