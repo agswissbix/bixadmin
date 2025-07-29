@@ -3,8 +3,9 @@
 import os
 import sys
 
-# Aggiungo la cartella bixdata al PYTHONPATH
-sys.path.insert(0, r"C:\Users\stagista\Desktop\bixdata")
+
+
+sys.path.insert(0,  os.environ.get('BIXENGINE_PATH'))
 
 def main():
     """Run administrative tasks."""
