@@ -9,7 +9,7 @@
         <form id="filterForm">
             <div class="mb-3">
                 <label class="form-label">Cliente ID</label>
-                <select id="cliente_id" class="form-select" onchange="sendFilters()">
+                <select id="cliente_id" class="form-select" onchange="updateParametri(); sendFilters()">
                     <option value="all">All</option>
                     {% for c in cliente_ids %}
                     <option value="{{ c }}">{{ c }}</option>
@@ -18,7 +18,7 @@
             </div>
             <div class="mb-3">
                 <label class="form-label">Tipo</label>
-                <select id="tipo" class="form-select" onchange="sendFilters()">
+                <select id="tipo" class="form-select" onchange="updateParametri(); sendFilters()">
                     <option value="all">All</option>
                     {% for t in tipi %}
                     <option value="{{ t }}">{{ t }}</option>
@@ -26,13 +26,19 @@
                 </select>
             </div>
             <div class="mb-3">
-                <label class="form-label">Parametro</label>
-                <select id="parametro" class="form-select" onchange="sendFilters()">
-                    <option value="all">All</option>
+                <label class="form-label d-block">Parametri</label>
+                <div id="parametri-container"
+                    style="max-height: 180px; overflow-y: auto; border: 1px solid #ced4da; border-radius: 0.25rem; padding: 10px;">
                     {% for p in parametri %}
-                    <option value="{{ p }}">{{ p }}</option>
+                    <div class="form-check">
+                        <input class="form-check-input parametro-checkbox" type="checkbox" value="{{ p }}"
+                            id="parametro_{{ forloop.counter }}" onchange="sendFilters()">
+                        <label class="form-check-label" for="parametro_{{ forloop.counter }}">
+                            {{ p }}
+                        </label>
+                    </div>
                     {% endfor %}
-                </select>
+                </div>
             </div>
         </form>
     </div>
@@ -48,128 +54,214 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-function sendFilters() {
+    function updateParametri() {
+        const clienteId = document.getElementById('cliente_id').value;
+        const tipo = document.getElementById('tipo').value;
+
+        const params = new URLSearchParams({
+            cliente_id: clienteId,
+            tipo: tipo,
+            only_params: 'true',
+        });
+
+        fetch('/monitoring/?' + params.toString(), {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+            .then(response => response.json())
+            .then(data => {
+                const container = document.getElementById('parametri-container');
+                container.innerHTML = '';
+
+                data.parametri.forEach((p, i) => {
+                    const div = document.createElement('div');
+                    div.className = 'form-check';
+
+                    div.innerHTML = `
+                <input class="form-check-input parametro-checkbox" type="checkbox" value="${p}" id="parametro_${i}" onchange="sendFilters()">
+                <label class="form-check-label" for="parametro_${i}">${p}</label>
+            `;
+                    container.appendChild(div);
+                });
+            })
+            .catch(error => console.error('Errore nel caricamento dei parametri:', error));
+    }
+
+    function sendFilters() {
     const clienteId = document.getElementById('cliente_id').value;
     const tipo = document.getElementById('tipo').value;
-    const parametro = document.getElementById('parametro').value;
+    const selectedParams = Array.from(document.querySelectorAll('.parametro-checkbox:checked'))
+        .map(cb => cb.value);
 
     const params = new URLSearchParams({
         cliente_id: clienteId,
         tipo: tipo,
-        parametro: parametro,
+        parametro: selectedParams.join(','),
     });
 
     fetch('/monitoring/?' + params.toString(), {
         method: 'GET',
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest'
-        }
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
     })
-    .then(response => response.json())
-    .then(data => {
-    console.log('Dati ricevuti:', data);
+        .then(response => response.json())
+        .then(data => {
+            console.log('Dati ricevuti:', data);
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<h2 class="mb-4">Risultati</h2>';
 
-    const resultsDiv = document.getElementById('results');
-    resultsDiv.innerHTML = '<h2 class="mb-4">Risultati</h2>';
+            const tipoLower = data.tipo ? data.tipo.toLowerCase() : '';
 
-    const tipo = data.tipo ? data.tipo.toLowerCase() : '';
+            if (tipoLower === 'services' && data.parametri && data.parametri.length > 0) {
+                // --- gestione services ---
+                data.parametri.forEach(item => {
+                    const status = item.valore ? item.valore.toLowerCase() : '';
+                    const statusColor = status === 'running' ? 'green' : (status === 'disabled' ? 'red' : 'gray');
 
-    if (tipo === 'services' && data.parametri && data.parametri.length > 0) {
-        // --- gestione services ---
-        data.parametri.forEach(item => {
-            const status = item.valore ? item.valore.toLowerCase() : '';
-            const statusColor = status === 'running' ? 'green' : (status === 'disabled' ? 'red' : 'gray');
+                    const div = document.createElement('div');
+                    div.className = 'd-flex justify-content-between align-items-center border p-2 mb-2 rounded';
+                    div.innerHTML = `
+                        <span>${item.nome}</span>
+                        <span style="width: 15px; height: 15px; background-color: ${statusColor}; border-radius: 50%; display: inline-block;"></span>
+                    `;
+                    resultsDiv.appendChild(div);
+                });
 
-            const div = document.createElement('div');
-            div.className = 'd-flex justify-content-between align-items-center border p-2 mb-2 rounded';
-            div.innerHTML = `
-                <span>${item.nome}</span>
-                <span style="width: 15px; height: 15px; background-color: ${statusColor}; border-radius: 50%; display: inline-block;"></span>
-            `;
-            resultsDiv.appendChild(div);
-        });
-    } else if (['folders', 'counters'].includes(tipo) && data.parametri && data.parametri.length > 0) {
-        // --- gestione folders/counters: grafico dinamico ---
-        const canvas = document.createElement('canvas');
-        canvas.id = 'myChart';
-        canvas.style.maxWidth = '600px';
-        canvas.style.maxHeight = '400px';
-        resultsDiv.appendChild(canvas);
+            } else if (['folders', 'counters'].includes(tipoLower) && data.parametri && data.parametri.length > 0) {
+                // --- gestione folders/counters: doppio grafico ---
 
-        const dateTimeSet = new Set();
-        data.parametri.forEach(item => {
-            const dtStr = `${item.data} ${item.ora}`;
-            dateTimeSet.add(dtStr);
-        });
-        const labels = Array.from(dateTimeSet).sort();
+                // Canvas per line chart
+                const lineCanvas = document.createElement('canvas');
+                lineCanvas.id = 'lineChart';
+                lineCanvas.style.maxWidth = '600px';
+                lineCanvas.style.maxHeight = '400px';
+                resultsDiv.appendChild(lineCanvas);
 
-        const nomiSet = new Set(data.parametri.map(item => item.nome));
-        const nomi = Array.from(nomiSet);
-
-        const colors = [
-            'rgba(75, 192, 192, 1)', 
-            'rgba(255, 99, 132, 1)',
-            'rgba(54, 162, 235, 1)',
-            'rgba(255, 206, 86, 1)',
-            'rgba(153, 102, 255, 1)',
-            'rgba(255, 159, 64, 1)'
-        ];
-
-        const datasets = nomi.map((nome, i) => {
-            const valoriMap = {};
-            data.parametri.forEach(item => {
-                if(item.nome === nome) {
+                // Calcolo labels e datasets per il line chart
+                const dateTimeSet = new Set();
+                data.parametri.forEach(item => {
                     const dtStr = `${item.data} ${item.ora}`;
-                    valoriMap[dtStr] = Number(item.valore);
-                }
-            });
-            const dataArr = labels.map(dt => valoriMap.hasOwnProperty(dt) ? valoriMap[dt] : null);
+                    dateTimeSet.add(dtStr);
+                });
+                const labels = Array.from(dateTimeSet).sort();
 
-            return {
-                label: nome,
-                data: dataArr,
-                borderColor: colors[i % colors.length],
-                backgroundColor: colors[i % colors.length].replace('1)', '0.2)'),
-                fill: true,
-                tension: 0.3,
-            };
-        });
+                const nomiSet = new Set(data.parametri.map(item => item.nome));
+                const nomi = Array.from(nomiSet);
 
-        const ctx = document.getElementById('myChart').getContext('2d');
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: datasets
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: { position: 'top' },
-                    title: {
-                        display: true,
-                        text: 'Valori dinamici per folders/counters'
-                    }
-                },
-                scales: {
-                    y: { beginAtZero: true },
-                    x: {
-                        ticks: {
-                            maxRotation: 90,
-                            minRotation: 45
+                const colors = [
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(153, 102, 255, 1)',
+                    'rgba(255, 159, 64, 1)'
+                ];
+
+                const datasets = nomi.map((nome, i) => {
+                    const valoriMap = {};
+                    data.parametri.forEach(item => {
+                        if (item.nome === nome) {
+                            const dtStr = `${item.data} ${item.ora}`;
+                            valoriMap[dtStr] = Number(item.valore);
+                        }
+                    });
+                    const dataArr = labels.map(dt => valoriMap.hasOwnProperty(dt) ? valoriMap[dt] : null);
+
+                    return {
+                        label: nome,
+                        data: dataArr,
+                        borderColor: colors[i % colors.length],
+                        backgroundColor: colors[i % colors.length].replace('1)', '0.2)'),
+                        fill: true,
+                        tension: 0.3,
+                    };
+                });
+
+                const ctxLine = document.getElementById('lineChart').getContext('2d');
+                new Chart(ctxLine, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { position: 'top' },
+                            title: {
+                                display: true,
+                                text: 'Valori dinamici per folders/counters'
+                            }
+                        },
+                        scales: {
+                            y: { beginAtZero: true },
+                            x: {
+                                ticks: {
+                                    maxRotation: 90,
+                                    minRotation: 45
+                                }
+                            }
                         }
                     }
-                }
-            }
-        });
+                });
 
-    } else {
-        resultsDiv.innerHTML += '<p class="text-muted">Nessun contenuto disponibile.</p>';
-    }
-})
-    .catch(error => {
-        console.error('Errore:', error);
-    });
+                // Canvas per pie chart
+                const pieCanvas = document.createElement('canvas');
+                pieCanvas.id = 'pieChart';
+                pieCanvas.style.maxWidth = '400px';
+                pieCanvas.style.maxHeight = '400px';
+                pieCanvas.classList.add('mt-4');
+                resultsDiv.appendChild(pieCanvas);
+
+                // Calcolo valori più recenti per ogni parametro (nome)
+                const latestValues = {};
+                nomi.forEach(nome => {
+                    const filtered = data.parametri.filter(item => item.nome === nome);
+                    let latestItem = filtered.reduce((a, b) => {
+                        const aDate = new Date(a.data + 'T' + a.ora);
+                        const bDate = new Date(b.data + 'T' + b.ora);
+                        return bDate > aDate ? b : a;
+                    });
+                    latestValues[nome] = Number(latestItem.valore);
+                });
+
+                // Somma totale
+                const total = Object.values(latestValues).reduce((acc, v) => acc + v, 0);
+
+                // Dati per pie chart (percentuali)
+                const pieData = {
+                    labels: Object.keys(latestValues),
+                    datasets: [{
+                        data: Object.values(latestValues).map(v => v),
+                        backgroundColor: colors.slice(0, nomi.length).map(c => c.replace('1)', '0.7)')),
+                        hoverOffset: 30
+                    }]
+                };
+
+                const ctxPie = document.getElementById('pieChart').getContext('2d');
+                new Chart(ctxPie, {
+                    type: 'pie',
+                    data: pieData,
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { position: 'right' },
+                            title: {
+                                display: true,
+                                text: 'Distribuzione valori più recenti (totale 100%)'
+                            }
+                        }
+                    }
+                });
+
+            } else {
+                resultsDiv.innerHTML += '<p class="text-muted">Nessun contenuto disponibile.</p>';
+            }
+        })
+        .catch(error => {
+            console.error('Errore:', error);
+        });
 }
 </script>
 {% endblock %}
