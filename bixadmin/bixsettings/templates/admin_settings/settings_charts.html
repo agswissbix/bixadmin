@@ -54,8 +54,8 @@
     </select>
     <button style="width: 10%; float: right" class="btn btn-secondary" type="button" onclick="select_table()">Seleziona</button>
 
-    <form method="post" action="{% url 'new_chart_block' %}" class="container text-center" style="float: left">
-
+    <form id="newChartBlockForm" class="container text-center" style="float: left">
+        {% csrf_token %}
         <div class="row">
             <div class="col-md-4 d-flex flex-column">
                 <h4>Nome blocco</h4>
@@ -64,14 +64,13 @@
                 </div>
             </div>
 
-
             <div class="col-md-4 d-flex flex-column">
                 <h4>View name</h4>
                 <select class="form-select build-form" aria-label="Default select example" name="view_id">
                     <option selected></option>
                         {% for item in context.views|dictsort:"name" %}
                             <option data-tableid="{{ item.tableid }}" value="{{ item.id }}">{{ item.name }}
-                                - {{ item.tableid }}</option>
+                                - {{ item.tableid }}</option>   
                         {% endfor %}
                 </select>
             </div>
@@ -86,13 +85,37 @@
                         {% endfor %}
                 </select>
             </div>
-
-
         </div>
-
         <button style="float: right" type="submit" class="btn btn-primary">Salva</button>
-
     </form>
+    <script>
+        $('#newChartBlockForm').submit(function(e){
+            e.preventDefault();
+            $.ajax({
+                type: "POST",
+                url: "{% url 'new_chart_block' %}",
+                data: $(this).serialize(),
+                success: function(response){
+                    swal({
+                        title: "Blocco aggiunto",
+                        text: "Il blocco è stato aggiunto con successo",
+                        icon: "success",
+                        timer: 800,
+                        buttons: false,
+                    });
+                },
+                error: function(response){
+                    swal({
+                        title: "Errore",
+                        text: "Si è verificato un errore",
+                        icon: "error",
+                        timer: 800,
+                        buttons: false,
+                    });
+                }
+            });
+        });
+    </script>
 </div>
 
 
@@ -100,8 +123,8 @@
 
     <h4>Nuovo Report</h4>
 
-    <form method="post" action="{% url 'new_report' %}" class="container text-center" style="float: left">
-
+    <form id="reportForm" method="post" class="container text-center" style="float: left">        
+        {% csrf_token %}
         <div class="row">
 
             <div class="col-md-4 d-flex flex-column">
@@ -168,6 +191,35 @@
     <button style="float: right" type="submit" class="btn btn-primary">Salva</button>
     </form>
 
+    <script>
+$('#reportForm').submit(function(e){
+            e.preventDefault();
+            $.ajax({
+                type: "POST",
+                url: "{% url 'new_report' %}",
+                data: $(this).serialize(),
+                success: function(response){
+                    swal({
+                        title: "Blocco aggiunto",
+                        text: "Il blocco è stato aggiunto con successo",
+                        icon: "success",
+                        timer: 800,
+                        buttons: false,
+                    });
+                },
+                error: function(response){
+                    swal({
+                        title: "Errore",
+                        text: "Si è verificato un errore",
+                        icon: "error",
+                        timer: 800,
+                        buttons: false,
+                    });
+                }
+            });
+        });
+</script>
+
 
 </div>
 
@@ -176,44 +228,70 @@
 
     <h4>Nuova View </h4>
 
-    <form method="post" action="{% url 'new_view' %}" class="container text-center" style="float: left">
+<form id="viewForm" method="post" class="container text-center" style="float: left">
+    {% csrf_token %}
+    <div class="row">
 
-        <div class="row">
-
-            <div class="col-md-4 d-flex flex-column">
-                <h4>Tableid</h4>
-                <select class="form-select" id="table-select-report" aria-label="Default select example" name="tableid">
-                    <option selected></option>
-                    {% for table in context.tables %}
-                        <option value="{{ table.id }}">{{ table.id }}</option>
-                    {% endfor %}
-                </select>
-                <button class="btn btn-secondary" type="button" onclick="select_table_report()">Seleziona</button>
-            </div>
-
-
-            <div class="col-md-4 d-flex flex-column">
-                <h4>Nome view</h4>
-                <div class="flex-fill">
-                    <input style="width: 100%" type="text" name="view_name">
-                </div>
-            </div>
-
-
-
-
-            <div class="col-md-4 d-flex flex-column">
-                <h4>Query conditions</h4>
-                <div class="flex-fill">
-                    <textarea style="width: 100%"  name="query_conditions"></textarea>
-                </div>
-            </div>
-
-
+        <div class="col-md-4 d-flex flex-column">
+            <h4>Tableid</h4>
+            <select class="form-select" id="table-select-view" aria-label="Default select example" name="tableid">
+                <option selected></option>
+                {% for table in context.tables %}
+                    <option value="{{ table.id }}">{{ table.id }}</option>
+                {% endfor %}
+            </select>
+            <button class="btn btn-secondary" type="button" onclick="select_table_view()">Seleziona</button>
         </div>
 
+        <div class="col-md-4 d-flex flex-column">
+            <h4>Nome view</h4>
+            <div class="flex-fill">
+                <input style="width: 100%" type="text" name="view_name">
+            </div>
+        </div>
+
+        <div class="col-md-4 d-flex flex-column">
+            <h4>Query conditions</h4>
+            <div class="flex-fill">
+                <textarea style="width: 100%" name="query_conditions"></textarea>
+            </div>
+        </div>
+
+    </div>
+
     <button style="float: right" type="submit" class="btn btn-primary">Salva</button>
-    </form>
+</form>
+
+<script>
+$('#viewForm').submit(function(e){
+    e.preventDefault(); // blocca il submit tradizionale
+    $.ajax({
+        type: "POST",
+        url: "{% url 'new_view' %}",
+        data: $(this).serialize(),
+        success: function(response){
+            swal({
+                title: "View aggiunta",
+                text: "La view è stata aggiunta con successo",
+                icon: "success",
+                timer: 800,
+                buttons: false,
+            });
+            // Qui puoi aggiornare dinamicamente la lista di view se serve
+        },
+        error: function(response){
+            swal({
+                title: "Errore",
+                text: "Si è verificato un errore",
+                icon: "error",
+                timer: 800,
+                buttons: false,
+            });
+        }
+    });
+});
+</script>
+
 
 
 </div>

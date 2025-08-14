@@ -943,22 +943,102 @@ def test_function(request):
     return JsonResponse(response, safe=False)
 
 def settings_charts(request):
-    context = {}
+
+
+    rows = SysUserDashboard.objects.all().values()
+    print(rows)  # Add this line to inspect the content of rows
+
+    userids = [row.get('userid', None) for row in rows]
+    dashboardids = [row.get('dashboardid', None) for row in rows]
+
+    rows2 = SysUser.objects.filter(id__in=userids).values('firstname', 'lastname')
+
+    names = [row['firstname'] + ' ' + row['lastname'] for row in rows2]
+
+    with connection.cursor() as cursor4:
+        cursor4.execute(
+            "SELECT * FROM sys_view"
+        )
+        rows4 = dictfetchall(cursor4)
+
+    with connection.cursor() as cursor5:
+        cursor5.execute(
+            "SELECT * FROM sys_report"
+        )
+        rows5 = dictfetchall(cursor5)
+
+    tables = SysTable.objects.all().values('id')
+    fields = SysField.objects.all().values('tableid', 'fieldid')
+
+    with connection.cursor() as cursor3:
+        cursor3.execute(
+            "SELECT * FROM v_sys_dashboard_block"
+        )
+        rows3 = dictfetchall(cursor3)
+
+        chart_names = [row['name'] for row in rows3]
+        chart_dashboard_id = [row['dashboardid'] for row in rows3]
+
     with connection.cursor() as cursor:
         cursor.execute(
-            "SELECT * FROM sys_dashboard ORDER BY name asc"
+            "SELECT * FROM v_users where is_active = 1"
         )
-        rows = dictfetchall(cursor)
+        users = dictfetchall(cursor)
 
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT * FROM sys_dashboard"
+        )
+        dashboards = dictfetchall(cursor)
+
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT * FROM sys_user_dashboard"
+        )
+        user_dashboards = dictfetchall(cursor)
+
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT * FROM sys_dashboard"
+        )
+        dashboards = dictfetchall(cursor)
+
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT * FROM sys_dashboard_block"
+        )
+        dashboard_blocks = dictfetchall(cursor)
+
+    for user in users:
+        for dashboard in dashboards:
+            user['dashboards'] = [dashboard for dashboard in dashboards]
+            for dash in user['dashboards']:
+                if dash['id'] in [user_dashboard['dashboardid'] for user_dashboard in user_dashboards if
+                                  user_dashboard['userid'] == user['sys_user_id']]:
+                    dash['visible'] = True
         with connection.cursor() as cursor:
             cursor.execute(
-                "SELECT * FROM v_users where is_active = 1"
-
+                "SELECT * FROM sys_dashboard"
             )
-            users = dictfetchall(cursor)
+            dashboards = dictfetchall(cursor)
 
-    context['dashboards'] = rows
-    context['users'] = users
+    context = {
+        'userids': userids,
+        'dashboardids': dashboardids,
+        'names': names,
+        'chart_names': chart_names,
+        'chart_dashboard_id': chart_dashboard_id,
+        'views': rows4,
+        'reports': rows5,
+        'tables': tables,
+        'fields': fields,
+        'users': users,
+        'dashboards': dashboards,
+        'dashboard_blocks': dashboard_blocks,
+        'user_dashboards': user_dashboards
+    }
+    
+    context['tables'] = tables
     return render(request, 'admin_settings/settings_charts.html', {'context': context})
 
 
@@ -992,6 +1072,9 @@ def save_users_dashboards(request):
     return JsonResponse({'success': True})
 
 
+from django.http import JsonResponse
+from django.db import connection
+
 def new_chart_block(request):
     if request.method == 'POST':
         name = request.POST.get('block_name')
@@ -1008,7 +1091,11 @@ def new_chart_block(request):
                 [dashboard_id, name, 1, view_id, report_id]
             )
 
-    return redirect('index')
+        # Risposta JSON per AJAX
+        return JsonResponse({'success': True})
+
+    return JsonResponse({'success': False, 'error': 'Invalid method'}, status=400)
+
 
 def new_report(request):
     tableid = request.POST.get('tableid')
@@ -1026,7 +1113,9 @@ def new_report(request):
             [1, tableid, report_name, fieldid, operation, layout, groupby]
         )
 
-    return JsonResponse({'success': True})
+        return JsonResponse({'success': True})
+
+    return JsonResponse({'success': False, 'error': 'Invalid method'}, status=400)
 
 
 def new_view(request):
@@ -1042,8 +1131,9 @@ def new_view(request):
             [1, view_name, tableid, query_conditions]
         )
 
-    return JsonResponse({'success': True})
+        return JsonResponse({'success': True})
 
+    return JsonResponse({'success': False, 'error': 'Invalid method'}, status=400)
 
 def save_dashboard_table(request):
     rows = request.POST.get('rows')

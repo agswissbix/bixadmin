@@ -3411,9 +3411,17 @@ def settings_charts(request):
 
             )
             users = dictfetchall(cursor)
+        
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT * FROM sys_table"
+
+            )
+            tables = dictfetchall(cursor)
 
     context['dashboards'] = rows
     context['users'] = users
+    context['tables'] = tables
     return render(request, 'admin_settings/settings_charts.html', {'context': context})
 
 
